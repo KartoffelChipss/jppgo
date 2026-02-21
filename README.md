@@ -4,6 +4,8 @@ This is a simple command-line tool that takes JSON input and formats it in a mor
 
 This tool was built using [gjson](https://github.com/tidwall/gjson) and [colorjson](https://github.com/TylerBrock/colorjson).
 
+![preview](.github/assets/jppgo_example.png)
+
 ## Installation
 
 ### Using Go
