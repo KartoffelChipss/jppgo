@@ -64,6 +64,11 @@ func main() {
 		input = stdinBytes
 	}
 
+	if !json.Valid(input) {
+		fmt.Fprintln(os.Stderr, "Invalid JSON input.")
+		os.Exit(1)
+	}
+
 	if *path != "" {
 		result := gjson.GetBytes(input, *path)
 		if !result.Exists() {
@@ -94,6 +99,7 @@ func main() {
 }
 
 func truncateDepth(v interface{}, current, max int) interface{} {
+	// If on max depth, return a placeholder instead of the actual value
 	if current >= max {
 		switch v.(type) {
 		case map[string]interface{}:
@@ -106,14 +112,14 @@ func truncateDepth(v interface{}, current, max int) interface{} {
 	}
 
 	switch val := v.(type) {
-	case map[string]interface{}:
+	case map[string]interface{}: // Recursively truncate nested maps
 		newMap := make(map[string]interface{})
 		for k, v2 := range val {
 			newMap[k] = truncateDepth(v2, current+1, max)
 		}
 		return newMap
 
-	case []interface{}:
+	case []interface{}: // Recursively truncate nested arrays
 		newArr := make([]interface{}, len(val))
 		for i, v2 := range val {
 			newArr[i] = truncateDepth(v2, current+1, max)
