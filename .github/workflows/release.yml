@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -45,10 +47,6 @@ jobs:
           GOOS=${{ matrix.goos }} \
           GOARCH=${{ matrix.goarch }} \
           go build \
-            -ldflags "-s -w \
-              -X main.version=${{ steps.vars.outputs.VERSION }} \
-              -X main.commit=${{ github.sha }} \
-              -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             -o dist/${BINARY}_${{ matrix.goos }}_${{ matrix.goarch }}${EXT}
 
       - name: Upload to Release

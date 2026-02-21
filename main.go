@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 	"syscall"
 
 	"github.com/TylerBrock/colorjson"
@@ -13,11 +14,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
-)
+var version = "dev"
 
 func main() {
 	showVersion := flag.BoolP("version", "v", false, "print version and exit")
@@ -40,7 +37,21 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Printf("Version: %s\nCommit: %s\nBuilt: %s\n", version, commit, date)
+		info, ok := debug.ReadBuildInfo()
+		if ok {
+			fmt.Printf("Version: %s\n", info.Main.Version)
+
+			for _, setting := range info.Settings {
+				switch setting.Key {
+				case "vcs.revision":
+					fmt.Printf("Commit: %s\n", setting.Value)
+				case "vcs.time":
+					fmt.Printf("Built: %s\n", setting.Value)
+				}
+			}
+		} else {
+			fmt.Printf("Version: %s\n", version)
+		}
 		os.Exit(0)
 	}
 
