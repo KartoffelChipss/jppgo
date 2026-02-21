@@ -11,8 +11,15 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
-	indent := flag.IntP("indent", "i", 4, "indent level")
+	showVersion := flag.BoolP("version", "v", false, "print version and exit")
+	indent := flag.IntP("indent", "i", 2, "indent level")
 	maxDepth := flag.IntP("max-depth", "d", -1, "maximum depth (-1 = unlimited)")
 	path := flag.StringP("path", "p", "", "gjson path (e.g. hits.0.analytics)")
 
@@ -29,6 +36,11 @@ func main() {
 	}
 
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("Version: %s\nCommit: %s\nBuilt: %s\n", version, commit, date)
+		os.Exit(0)
+	}
 
 	if *indent < 0 {
 		fmt.Fprintln(os.Stderr, "Indent must be non-negative.")
