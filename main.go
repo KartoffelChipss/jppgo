@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"syscall"
 
 	"github.com/TylerBrock/colorjson"
 	flag "github.com/spf13/pflag"
@@ -24,14 +26,14 @@ func main() {
 	path := flag.StringP("path", "p", "", "gjson path (e.g. hits.0.analytics)")
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s [options] [file]\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "\n")
-		fmt.Fprintf(os.Stderr, "Examples:\n")
-		fmt.Fprintf(os.Stderr, "  cat file.json | %s\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s data.json\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "\n")
-		fmt.Fprintf(os.Stderr, "Options:\n")
+		_, _ = fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		_, _ = fmt.Fprintf(os.Stderr, "  %s [options] [file]\n", os.Args[0])
+		_, _ = fmt.Fprintf(os.Stderr, "\n")
+		_, _ = fmt.Fprintf(os.Stderr, "Examples:\n")
+		_, _ = fmt.Fprintf(os.Stderr, "  cat file.json | %s\n", os.Args[0])
+		_, _ = fmt.Fprintf(os.Stderr, "  %s data.json\n", os.Args[0])
+		_, _ = fmt.Fprintf(os.Stderr, "\n")
+		_, _ = fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
 
@@ -43,7 +45,7 @@ func main() {
 	}
 
 	if *indent < 0 {
-		fmt.Fprintln(os.Stderr, "Indent must be non-negative.")
+		_, _ = fmt.Fprintln(os.Stderr, "Indent must be non-negative.")
 		os.Exit(1)
 	}
 
@@ -51,21 +53,21 @@ func main() {
 	args := flag.Args()
 
 	if len(args) > 1 {
-		fmt.Fprintln(os.Stderr, "Only one input file may be specified.")
+		_, _ = fmt.Fprintln(os.Stderr, "Only one input file may be specified.")
 		os.Exit(1)
 	}
 
 	if len(args) == 1 {
 		fileBytes, err := os.ReadFile(args[0])
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error reading file:", err)
+			_, _ = fmt.Fprintln(os.Stderr, "Error reading file:", err)
 			os.Exit(1)
 		}
 		input = fileBytes
 	} else {
 		stat, _ := os.Stdin.Stat()
 		if (stat.Mode() & os.ModeCharDevice) != 0 {
-			fmt.Fprintln(os.Stderr, "No input provided. Pipe JSON or specify a file.")
+			_, _ = fmt.Fprintln(os.Stderr, "No input provided. Pipe JSON or specify a file.")
 			os.Exit(1)
 		}
 
@@ -77,14 +79,14 @@ func main() {
 	}
 
 	if !json.Valid(input) {
-		fmt.Fprintln(os.Stderr, "Invalid JSON input.")
+		_, _ = fmt.Fprintln(os.Stderr, "Invalid JSON input.")
 		os.Exit(1)
 	}
 
 	if *path != "" {
 		result := gjson.GetBytes(input, *path)
 		if !result.Exists() {
-			fmt.Fprintln(os.Stderr, "Path not found.")
+			_, _ = fmt.Fprintln(os.Stderr, "Path not found.")
 			os.Exit(1)
 		}
 		input = []byte(result.Raw)
@@ -107,7 +109,13 @@ func main() {
 		panic(err)
 	}
 
-	os.Stdout.Write(coloredJSON)
+	if _, err := os.Stdout.Write(coloredJSON); err != nil {
+		if errors.Is(err, syscall.EPIPE) {
+			os.Exit(0)
+		}
+		_, _ = fmt.Fprintln(os.Stderr, "Write error:", err)
+		os.Exit(1)
+	}
 }
 
 func truncateDepth(v interface{}, current, max int) interface{} {
